@@ -33,6 +33,8 @@ import (
 
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	apiservercel "k8s.io/apiserver/pkg/cel"
+
+	googlecmp "github.com/google/go-cmp/cmp"
 )
 
 const (
@@ -1513,6 +1515,17 @@ func TestSize(t *testing.T) {
 			argSizes:   nil,
 			expectSize: checker.SizeEstimate{Min: 10, Max: 300},
 		},
+		{
+			name:       "split result size",
+			function:   "split",
+			targetSize: exactSize(100),
+			argSizes:   exactSizes(1),
+			expectSize: checker.SizeEstimate{
+				Min:  0,
+				Max:  100,
+				Elem: &checker.SizeEstimate{Min: 0, Max: 100},
+			},
+		},
 	}
 
 	originalPanicOnUnknown := panicOnUnknown
@@ -1531,8 +1544,8 @@ func TestSize(t *testing.T) {
 			if result.ResultSize == nil {
 				t.Fatalf("Expected ResultSize but got none")
 			}
-			if *result.ResultSize != tc.expectSize {
-				t.Fatalf("Expected %+v but got %+v", tc.expectSize, *result.ResultSize)
+			if diff := googlecmp.Diff(tc.expectSize, *result.ResultSize); diff != "" {
+				t.Fatalf("Unexpected ResultSize (-want +got):\n%s", diff)
 			}
 		})
 	}

@@ -1830,6 +1830,20 @@ func TestCostEstimation(t *testing.T) {
 			expectedSetCost:  22,
 		},
 		{
+			name: "extended library split indexing with matches",
+			schemaGenerator: func(max *int64) *schema.Structural {
+				strType := withMaxLength(primitiveType("string", ""), max)
+				objType := objectType(map[string]schema.Structural{
+					"key": strType,
+				})
+				objType = withRule(objType, "self.key.split('/')[1].matches('^[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$')")
+				return &objType
+			},
+			expectedCalcCost: 4089452,
+			setMaxElements:   10,
+			expectedSetCost:  66,
+		},
+		{
 			name: "extended library lowerAscii",
 			schemaGenerator: func(max *int64) *schema.Structural {
 				strType := withMaxLength(primitiveType("string", ""), max)
